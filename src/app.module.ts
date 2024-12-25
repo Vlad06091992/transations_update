@@ -6,6 +6,7 @@ import { Wallets } from 'src/entities/wallet.entity';
 import { Purchase } from 'src/entities/purchase.entity';
 import { Repository } from 'typeorm';
 import { OtherService } from 'src/other-service';
+import { DbRepo } from 'src/repos/db.repo';
 @Module({
   imports: [
     TypeOrmModule.forRoot({
@@ -22,6 +23,6 @@ import { OtherService } from 'src/other-service';
     TypeOrmModule.forFeature([Wallets, Purchase]),
   ],
   controllers: [AppController],
-  providers: [AppService, Repository, OtherService],
+  providers: [AppService, Repository, OtherService, DbRepo],
 })
 export class AppModule {}
