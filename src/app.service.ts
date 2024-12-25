@@ -72,6 +72,8 @@ export class AppService {
 
     console.log('CONTINUE QUICK', price);
 
+    //передаем баланс и баланс который хоим установить, если баланс поменялся, не делаем
+    //операцию(не проходит по условию запроса)
     const isUpdated = await this.repo.updateBalance(
       1,
       wallet.balance,
