@@ -1,7 +1,4 @@
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Wallets } from 'src/entities/wallet.entity';
-import { Repository } from 'typeorm';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { OtherService } from 'src/other-service';
 import { Purchase } from 'src/entities/purchase.entity';
 import { DbRepo } from 'src/repos/db.repo';
@@ -37,9 +34,16 @@ export class AppService {
 
     console.log('CONTINUE SLOW', price);
 
-    wallet.balance = wallet.balance - price;
-    await this.repo.saveWallet(wallet);
+    const isUpdated = await this.repo.updateBalance(
+      1,
+      wallet.balance,
+      wallet.balance - price,
+    );
 
+    if (!isUpdated) {
+      console.error('VERSION ERROR');
+      throw new BadRequestException({ message: 'VERSION ERROR' });
+    }
     const purchase = Purchase.createFromData({ price, title: 'SLOW' });
     await this.repo.savePurchase(purchase);
     return true;
@@ -68,8 +72,16 @@ export class AppService {
 
     console.log('CONTINUE QUICK', price);
 
-    wallet.balance = wallet.balance - price;
-    await this.repo.saveWallet(wallet);
+    const isUpdated = await this.repo.updateBalance(
+      1,
+      wallet.balance,
+      wallet.balance - price,
+    );
+
+    if (!isUpdated) {
+      console.error('VERSION ERROR');
+      throw new BadRequestException({ message: 'VERSION ERROR' });
+    }
 
     const purchase = Purchase.createFromData({ price, title: 'QUICK' });
     await this.repo.savePurchase(purchase);

@@ -32,4 +32,16 @@ export class DbRepo {
   async clearPurchases() {
     await this.purchaseRepo.clear();
   }
+
+  async updateBalance(id, prevBalance, balance) {
+    const result = await this.dataSource
+      .createQueryBuilder()
+      .update(Wallets)
+      .set({ balance })
+      .where('balance = :prevBalance', { prevBalance })
+      .andWhere('id = :id', { id })
+      .execute();
+
+    return result.affected > 0;
+  }
 }
