@@ -12,12 +12,12 @@ export class AppService {
 
   async slowBySomething(id: number, price: number): Promise<boolean> {
     console.log('START SLOW', price);
-    const wallet = await this.repo.findWallet(id);
+    const { balanceVersion, balance, title } = await this.repo.findWallet(id);
     debugger;
-    if (wallet.balance < price) {
+    if (balance < price) {
       debugger;
       console.warn(
-        `No money for Quick payment! Balance: ${wallet.balance}, price: ${price}`,
+        `No money for Quick payment! Balance: ${balance}, price: ${price}`,
       );
       return false;
     }
@@ -34,10 +34,10 @@ export class AppService {
 
     console.log('CONTINUE SLOW', price);
 
-    const isUpdated = await this.repo.updateBalance(
+    const isUpdated = await this.repo.updateBalanceWithVersion(
       1,
-      wallet.balance,
-      wallet.balance - price,
+      balance,
+      balanceVersion,
     );
 
     if (!isUpdated) {
@@ -51,11 +51,11 @@ export class AppService {
 
   async quickBySomething(id: number, price: number): Promise<boolean> {
     console.log('START QUICK', price);
-    const wallet = await this.repo.findWallet(id);
+    const { balanceVersion, balance } = await this.repo.findWallet(id);
 
-    if (wallet.balance < price) {
+    if (balance < price) {
       console.warn(
-        `No money for Quick payment! Balance: ${wallet.balance}, price: ${price}`,
+        `No money for Quick payment! Balance: ${balance}, price: ${price}`,
       );
       return false;
     }
@@ -74,10 +74,10 @@ export class AppService {
 
     //передаем баланс и баланс который хоим установить, если баланс поменялся, не делаем
     //операцию(не проходит по условию запроса)
-    const isUpdated = await this.repo.updateBalance(
+    const isUpdated = await this.repo.updateBalanceWithVersion(
       1,
-      wallet.balance,
-      wallet.balance - price,
+      balance,
+      balanceVersion,
     );
 
     if (!isUpdated) {
@@ -105,6 +105,7 @@ export class AppService {
     await this.repo.clearPurchases();
     const wallet = await this.repo.findWallet(1);
     wallet.balance = 100;
+    wallet.balanceVersion = 0;
     await this.repo.saveWallet(wallet);
   }
 }

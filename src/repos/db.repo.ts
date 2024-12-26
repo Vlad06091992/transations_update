@@ -33,12 +33,12 @@ export class DbRepo {
     await this.purchaseRepo.clear();
   }
 
-  async updateBalance(id, prevBalance, balance) {
+  async updateBalanceWithVersion(id, balance, balanceVersion) {
     const result = await this.dataSource
       .createQueryBuilder()
       .update(Wallets)
-      .set({ balance })
-      .where('balance = :prevBalance', { prevBalance })
+      .set({ balance, balanceVersion: balanceVersion + 1 })
+      .where('balanceVersion = :balanceVersion', { balanceVersion })
       .andWhere('id = :id', { id })
       .execute();
 

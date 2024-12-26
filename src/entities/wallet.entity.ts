@@ -11,11 +11,13 @@ export class Wallets {
   @Column()
   title: string;
 
+  @Column({ default: 0 })
+  balanceVersion: number;
+
   static createFromData({ title, balance }: Omit<Wallets, 'id'>): Wallets {
     const wallet = new Wallets();
     wallet.title = title;
     wallet.balance = balance;
-
     return wallet;
   }
 }
