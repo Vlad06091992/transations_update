@@ -58,6 +58,8 @@ export class AppService {
       console.log(e);
       console.error('TRANSACTION ROLLBACK');
       await queryRunner.rollbackTransaction();
+    } finally {
+      await queryRunner.release();
     }
   }
 
@@ -113,6 +115,8 @@ export class AppService {
       console.error('TRANSACTION ROLLBACK');
       await queryRunner.rollbackTransaction();
       throw new Error();
+    } finally {
+      await queryRunner.release();
     }
   }
 
