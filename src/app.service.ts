@@ -106,7 +106,7 @@ export class AppService {
       console.log('CONTINUE QUICK', price);
       wallet.balance = wallet.balance - price;
       await walletRepoFromQueryRunner.save(wallet);
-      const purchase = Purchase.createFromData({ price, title: 'SLOW' });
+      const purchase = Purchase.createFromData({ price, title: 'QUICK' });
       await purchaseRepoFromQueryRunner.save(purchase);
       await queryRunner.commitTransaction();
       return true;
