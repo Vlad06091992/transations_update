@@ -10,7 +10,11 @@ export class AppService {
     private readonly repo: DbRepo,
   ) {}
 
-  async slowBySomething(id: number, price: number): Promise<boolean> {
+  async slowBySomething(
+    id: number,
+    price: number,
+    retryAttemptCount = 0,
+  ): Promise<boolean> {
     console.log('START SLOW', price);
     const { balanceVersion, balance, title } = await this.repo.findWallet(id);
     debugger;
@@ -41,7 +45,13 @@ export class AppService {
     );
 
     if (!isUpdated) {
+      if (retryAttemptCount < 3) {
+        console.log('RETRY');
+        return await this.slowBySomething(id, price, retryAttemptCount + 1);
+      }
+
       console.error('VERSION ERROR');
+
       throw new BadRequestException({ message: 'VERSION ERROR' });
     }
     const purchase = Purchase.createFromData({ price, title: 'SLOW' });
@@ -49,7 +59,11 @@ export class AppService {
     return true;
   }
 
-  async quickBySomething(id: number, price: number): Promise<boolean> {
+  async quickBySomething(
+    id: number,
+    price: number,
+    retryAttemptCount = 0,
+  ): Promise<boolean> {
     console.log('START QUICK', price);
     const { balanceVersion, balance } = await this.repo.findWallet(id);
 
@@ -81,7 +95,13 @@ export class AppService {
     );
 
     if (!isUpdated) {
+      if (retryAttemptCount < 3) {
+        console.log('RETRY');
+        return await this.quickBySomething(id, price, retryAttemptCount + 1);
+      }
+
       console.error('VERSION ERROR');
+
       throw new BadRequestException({ message: 'VERSION ERROR' });
     }
 
