@@ -21,7 +21,7 @@ export class AppController {
       throw new BadRequestException();
     }
 
-    await this.appService.slowBySomething(+id, +price);
+    await this.appService.slowBySomethingWithTransaction(+id, +price);
   }
 
   @Get('quick')
@@ -30,6 +30,6 @@ export class AppController {
       throw new BadRequestException();
     }
 
-    await this.appService.quickBySomething(+id, +price);
+    await this.appService.quickBySomethingWithTransaction(+id, +price);
   }
 }

@@ -2,92 +2,107 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { OtherService } from 'src/other-service';
 import { Purchase } from 'src/entities/purchase.entity';
 import { DbRepo } from 'src/repos/db.repo';
+import { DataSource } from 'typeorm';
+import { Wallets } from 'src/entities/wallet.entity';
 
 @Injectable()
 export class AppService {
   constructor(
     private readonly otherService: OtherService,
     private readonly repo: DbRepo,
+    private readonly dataSource: DataSource,
   ) {}
 
-  async slowBySomething(id: number, price: number): Promise<boolean> {
-    console.log('START SLOW', price);
-    const wallet = await this.repo.findWallet(id);
-    debugger;
-    if (wallet.balance < price) {
-      debugger;
-      console.warn(
-        `No money for Quick payment! Balance: ${wallet.balance}, price: ${price}`,
+  async slowBySomethingWithTransaction(
+    id: number,
+    price: number,
+  ): Promise<boolean> {
+    const queryRunner = this.dataSource.createQueryRunner();
+    // establish real database connection using our new query runner
+    await queryRunner.connect();
+    // lets now open a new transaction:
+    await queryRunner.startTransaction();
+
+    const walletRepoFromQueryRunner =
+      this.dataSource.manager.getRepository(Wallets);
+    const purchaseRepoFromQueryRunner =
+      this.dataSource.manager.getRepository(Purchase);
+
+    try {
+      console.log('START SLOW', price);
+      const wallet = await walletRepoFromQueryRunner.findOne({ where: { id } });
+      const result = await this.otherService.checkProductAvailability(
+        'milk',
+        5000,
       );
-      return false;
+
+      if (!result) {
+        console.warn('No product!!!');
+        return false;
+      }
+
+      console.log('CONTINUE SLOW', price);
+      wallet.balance = wallet.balance - price;
+      await walletRepoFromQueryRunner.save(wallet);
+
+      const purchase = Purchase.createFromData({ price, title: 'SLOW' });
+      await purchaseRepoFromQueryRunner.save(purchase);
+      await queryRunner.commitTransaction();
+      return true;
+    } catch (e) {
+      console.error('TRANSACTION ROLLBACK');
+      await queryRunner.rollbackTransaction();
     }
-
-    const result = await this.otherService.checkProductAvailability(
-      'milk',
-      5000,
-    );
-
-    if (!result) {
-      console.warn('No product!!!');
-      return false;
-    }
-
-    console.log('CONTINUE SLOW', price);
-
-    const isUpdated = await this.repo.updateBalance(
-      1,
-      wallet.balance,
-      wallet.balance - price,
-    );
-
-    if (!isUpdated) {
-      console.error('VERSION ERROR');
-      throw new BadRequestException({ message: 'VERSION ERROR' });
-    }
-    const purchase = Purchase.createFromData({ price, title: 'SLOW' });
-    await this.repo.savePurchase(purchase);
-    return true;
   }
 
-  async quickBySomething(id: number, price: number): Promise<boolean> {
-    console.log('START QUICK', price);
-    const wallet = await this.repo.findWallet(id);
+  async quickBySomethingWithTransaction(
+    id: number,
+    price: number,
+  ): Promise<boolean> {
+    const queryRunner = this.dataSource.createQueryRunner();
+    // establish real database connection using our new query runner
+    await queryRunner.connect();
+    // lets now open a new transaction:
+    await queryRunner.startTransaction();
 
-    if (wallet.balance < price) {
-      console.warn(
-        `No money for Quick payment! Balance: ${wallet.balance}, price: ${price}`,
+    const walletRepoFromQueryRunner =
+      this.dataSource.manager.getRepository(Wallets);
+    const purchaseRepoFromQueryRunner =
+      this.dataSource.manager.getRepository(Purchase);
+
+    try {
+      console.log('START QUICK', price);
+      const wallet = await walletRepoFromQueryRunner.findOne({ where: { id } });
+      if (wallet.balance < price) {
+        console.warn(
+          `No money for Quick payment! Balance: ${wallet.balance}, price: ${price}`,
+        );
+        return false;
+      }
+
+      const result = await this.otherService.checkProductAvailability(
+        'milk',
+        5000,
       );
-      return false;
+
+      if (!result) {
+        console.warn('No product!!!');
+        return false;
+      }
+
+      console.log('CONTINUE QUICK', price);
+      wallet.balance = wallet.balance - price;
+      await walletRepoFromQueryRunner.save(wallet);
+      const purchase = Purchase.createFromData({ price, title: 'SLOW' });
+      await purchaseRepoFromQueryRunner.save(purchase);
+      await queryRunner.commitTransaction();
+      return true;
+    } catch (e) {
+      debugger;
+      console.error('TRANSACTION ROLLBACK');
+      await queryRunner.rollbackTransaction();
+      throw new Error();
     }
-
-    const result = await this.otherService.checkProductAvailability(
-      'milk',
-      500,
-    );
-
-    if (!result) {
-      console.warn('No product!!!');
-      return false;
-    }
-
-    console.log('CONTINUE QUICK', price);
-
-    //передаем баланс и баланс который хоим установить, если баланс поменялся, не делаем
-    //операцию(не проходит по условию запроса)
-    const isUpdated = await this.repo.updateBalance(
-      1,
-      wallet.balance,
-      wallet.balance - price,
-    );
-
-    if (!isUpdated) {
-      console.error('VERSION ERROR');
-      throw new BadRequestException({ message: 'VERSION ERROR' });
-    }
-
-    const purchase = Purchase.createFromData({ price, title: 'QUICK' });
-    await this.repo.savePurchase(purchase);
-    return true;
   }
 
   getHello(): string {
