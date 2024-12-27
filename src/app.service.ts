@@ -24,13 +24,18 @@ export class AppService {
     await queryRunner.startTransaction();
 
     const walletRepoFromQueryRunner =
-      this.dataSource.manager.getRepository(Wallets);
+      queryRunner.manager.getRepository(Wallets);
     const purchaseRepoFromQueryRunner =
-      this.dataSource.manager.getRepository(Purchase);
+      queryRunner.manager.getRepository(Purchase);
 
     try {
       console.log('START SLOW', price);
-      const wallet = await walletRepoFromQueryRunner.findOne({ where: { id } });
+      const wallet = await walletRepoFromQueryRunner
+        .createQueryBuilder()
+        .setLock('pessimistic_write')
+        .where({ id })
+        .getOne();
+
       const result = await this.otherService.checkProductAvailability(
         'milk',
         5000,
@@ -50,6 +55,7 @@ export class AppService {
       await queryRunner.commitTransaction();
       return true;
     } catch (e) {
+      console.log(e);
       console.error('TRANSACTION ROLLBACK');
       await queryRunner.rollbackTransaction();
     }
@@ -66,13 +72,18 @@ export class AppService {
     await queryRunner.startTransaction();
 
     const walletRepoFromQueryRunner =
-      this.dataSource.manager.getRepository(Wallets);
+      queryRunner.manager.getRepository(Wallets);
     const purchaseRepoFromQueryRunner =
-      this.dataSource.manager.getRepository(Purchase);
+      queryRunner.manager.getRepository(Purchase);
 
     try {
       console.log('START QUICK', price);
-      const wallet = await walletRepoFromQueryRunner.findOne({ where: { id } });
+      const wallet = await walletRepoFromQueryRunner
+        .createQueryBuilder()
+        .setLock('pessimistic_write')
+        .where({ id })
+        .getOne();
+
       if (wallet.balance < price) {
         console.warn(
           `No money for Quick payment! Balance: ${wallet.balance}, price: ${price}`,
