@@ -82,7 +82,7 @@ export class AppService {
 
       const result = await this.otherService.checkProductAvailability(
         'milk',
-        5000,
+        100,
       );
 
       if (!result) {
